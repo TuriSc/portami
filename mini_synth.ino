@@ -38,8 +38,9 @@
  * @bug pitch bend depth / modulation pitch does not work
  *
  * @see https://youtu.be/uwIEd5NU29I
+ *
+ * @contribution 18.12.2022 by Turi Scandurra: function changeWaveform()
  */
-
 
 #ifdef __CDT_PARSER__
 #include "cdt.h"
@@ -794,3 +795,8 @@ void Synth_SetParam(uint8_t param, float value)
     }
 }
 
+void changeWaveform(){
+  current_waveform = (current_waveform + 7) % 6; // rotate through available waveforms
+  chControl[actCh].waveForm = waveFormList[current_waveform];
+  updateLEDs();
+}

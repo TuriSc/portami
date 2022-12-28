@@ -1,31 +1,50 @@
-<h1 align="center">samd21_mini_synth</h1>
-<h3 align="center">Lo-Fi SAMD21 based mini chip tune synthesizer<br>Seeed Studio - Seeeduino XIAO arduino project</h3>  
-<p align="center"> 
-  <img src="img/splash.jpg" alt="project picture" width="480px" height="270px"><br>
-  <a href="https://youtu.be/x4WEWTdZR90">link to the video</a>
-</p>
-<h2>Description</h2>
-This time I went back to a very small controller: ATSAMD21G18A on a Seeeduino XIAO
-The chip tune like polyphonic synthesizer is the result of my little experiment
-It runs with "only" 48MHz without FPU and has one DAC (real analog output with 10 bit resolution)
+# Portami
+## Portable USB Midi synth with onboard speaker and audio out
 
-Tested with arduino board 'seeed_XIAO_m0'
+![Portami Midi synth](img/portami-01.jpg)
 
-Some key features:
-- 24 voices polyphony (more might be possible) / set to 12 for better performance
-- Different selectable waveforms (sine, saw, square, pulse, tri)
-- Separate setting per MIDI channel
-- Short delay effect (250ms) with feedback control
-- Pitchbend and modulation
-- Modulation lfo waveforms: (sine, saw, square, pulse, tri, prn)
-- Controllable intensity and speed of lfo
+See it in action: [YouTube video](https://youtu.be/IseTEVhyauk)
 
-<h2>Connections</h2>
-- RX pin for MIDI in (please use a dedicated circuit with an opto-coupler)
-- DAC as audio out (requires a capacitor in series and an amplifier)
+Portami is a portable, battery-powered polyphonic synth built around a SAMD21 microcontroller. It's designed to be a companion to small Midi keyboards.
+The software is a fork of [Marcel Licence's excellent code](https://github.com/marcel-licence/samd21_mini_synth).
+My implementation focuses on USB Midi communication (Midi-in through the onboard USB-C port) and features a push button to cycle between wave types (sine, saw, square, pulse, triangle, and noise). An RGB led inside the button changes color according to the current wave type.
+It should work out-of-the-box with basic keyboard controllers, like the AKAI LPK25 in the picture. Knobs can be mapped to change synth parameters like modulation speed or pitch bend range. I tested it with an AKAI MPK Mini Play, and a keyboard mapping for this specific controller is provided. There also is a debugging tool (SAMD21synthDebugger) that can be used to find the address of knobs and sliders of more controllers.
+Other than the onboard speaker driven by an LM386 amplifier, Portami has a 3.5" mini-jack port to plug a pair of headphones. The audio socket has a switching mechanism, disconnecting the speaker when in use.
+The whole setup is powered by a 3.7V, 1100mAh li-ion battery, recharged and protected by a TP4056 USB-C charger module. A regulator boosts voltage to 5V, providing power to the Midi keyboard (you might want to check current requirements for your specific setup, or power the keyboard externally).
 
-<h2>Options</h2>
-Please activate KEYB_USB_HOST_ENABLED in config.h to allow connecting an USB keyboard.
-- the keyboard can be connected using an OTG USB adapter
-- in addition to that you might need an external 5v power supply
+### Required libraries
+- [USB Host Library SAMD](https://github.com/gdsports/USB_Host_Library_SAMD)
+- [Button](https://github.com/madleech/Button)
 
+![Portami](img/portami-02.jpg)
+
+### BOM
+- Seeed Studio XIAO SAMD21 (Seeeduino XIAO)
+- TP4056 battery charger module
+- 18650 or equivalent lithium battery
+- Voltage regulator (like boost converter MT3608)
+- LM386 audio power amplifier IC
+- 47pF capacitor
+- 2x 100nF capacitors
+- 1uF capacitor
+- 2.2uF electrolytic capacitor
+- 220uF electrolytic capacitor
+- 1000uF electrolytic capacitor
+- 10Ω resistor
+- 470Ω resistor
+- 3x 1K resistors
+- 10K resistor
+- RGB LED
+- 10K linear potentiometer
+- 8Ω speaker
+- A push-button switch (momentary)
+- A rocker or latching switch
+
+### Schematic
+![Portami schematic](img/portami-schematic.png)
+
+![Portami circuit](img/portami-03.jpg)
+
+Project notes and more info at [turiscandurra.com/circuits](https://turiscandurra.com/circuits)
+
+The word portami in Italian means "take me" (to a location). As in "portami con te" (take me with you).

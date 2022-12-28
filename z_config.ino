@@ -39,8 +39,9 @@
  * declarations and type definitions
  *
  * @see ESP32 Arduino DIY Synthesizer Projects - Little startup guide to get your MIDI synth working - https://youtu.be/ZNxGCB-d68g
+ *
+ * @contribution 18.12.2022 by Turi Scandurra: added mapping for AKAI MPK Mini Play
  */
-
 
 #ifdef __CDT_PARSER__
 #include <cdt.h>
@@ -144,6 +145,34 @@ struct midiControllerMapping edirolMapping[] =
     { 0x0, 0x52, "Arr-U", NULL, Synth_Noise, 8},
 };
 
+/*
+ * mapping for AKAI MPK Mini Play
+ */
+struct midiControllerMapping akaiMPKMiniPlayMapping[] = 
+{
+  /* {channel, control change number, description, callback_mid, callback_val, user_data} */
+  { 0x0, 0x10, "Joystick-Y", NULL, Synth_ModulationWheel, 0},
+  { 0x0, 0x30, "Knob1", NULL, Delay_SetLevel, 0},
+  { 0x0, 0x31, "Knob2", NULL, Delay_SetFeedback, 0},
+  { 0x0, 0x32, "Knob3", NULL, Synth_SetParam, SYNTH_PARAM_MODULATION_SPEED},
+  { 0x0, 0x33, "Knob4", NULL, Synth_SetParam, SYNTH_PARAM_PITCH_BEND_RANGE},
+  { 0x0, 0x34, "Knob5", NULL, Synth_SetParam, SYNTH_PARAM_WAVEFORM_1},
+  { 0x0, 0x35, "Knob6", NULL, Synth_SetParam, SYNTH_PARAM_WAVEFORM_2},
+  // { 0x0, 0x??, "??", NULL, Synth_SetParam, SYNTH_PARAM_MODULATION_PITCH},  
+
+};
+
+/*
+{pattern="b? 46 xx", name="Knob 1"},
+        {pattern="b? 47 xx", name="Knob 2"},
+        {pattern="b? 48 xx", name="Knob 3"},
+        {pattern="b? 49 xx", name="Knob 4"},
+        {pattern="b? 4a xx", name="Knob 5"},
+        {pattern="b? 4b xx", name="Knob 6"},
+        {pattern="b? 4c xx", name="Knob 7"},
+        {pattern="b? 4d xx", name="Knob 8"},
+*/
+
 struct midiMapping_s midiMapping =
 {
     NULL,
@@ -151,6 +180,6 @@ struct midiMapping_s midiMapping =
     Synth_NoteOff,
     Synth_PitchBend,
     Synth_ModulationWheel,
-    edirolMapping,
-    sizeof(edirolMapping) / sizeof(edirolMapping[0]),
+    akaiMPKMiniPlayMapping,
+    sizeof(akaiMPKMiniPlayMapping) / sizeof(akaiMPKMiniPlayMapping[0]),
 };

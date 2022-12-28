@@ -40,6 +40,8 @@
  * Put all your project settings here (defines, numbers, etc.)
  * configurations which are requiring knowledge of types etc.
  * shall be placed in z_config.ino (will be included at the end)
+ *
+ * @contribution 18.12.2022 by Turi Scandurra: defining MIDI_USB_HOST_ENABLED
  */
 
 
@@ -49,9 +51,8 @@
 
 #pragma GCC optimize ("-O2") /* a bit of fairy dust for the compiler */
 
-//#define MIDI_USB_HOST_ENABLED /* requires usb=arduino */
+#define MIDI_USB_HOST_ENABLED /* requires usb=arduino */
 //#define MIDI_USB_DEVICE_ENABLED /* requires usb=tinyusb */
-
 //#define KEYB_USB_HOST_ENABLED /* requires usb=arduino */
 
 #define MIDI_RECV_FROM_SERIAL

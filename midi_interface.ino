@@ -35,18 +35,24 @@
  *
  * @brief This file contains an implementation of a simple MIDI interpreter to parse incoming messages
  *
- * MIDI_DUMP_Serial1_TO_SERIAL <- when active received data will be output as hex on serial(1)
- * MIDI_SERIAL1_BAUDRATE <- use define to override baud-rate for MIDI, otherwise default of 31250 will be used
- *
  * @see https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
+ *
+ * @contribution 18.12.2022 by Turi Scandurra: switching reading data from serial to USB
  */
 
 
 #ifdef __CDT_PARSER__
 #include <cdt.h>
 #endif
+#include <Arduino.h>
+#include <usbh_midi.h>
+#include <usbhub.h>
 
+USBHost UsbH;
+USBHub Hub(&UsbH);
+USBH_MIDI  Midi(&UsbH);
 
+/* use define to dump midi data */
 #define MIDI_DUMP_Serial1_TO_SERIAL
 
 /*
@@ -59,8 +65,6 @@
 #define MIDI_SERIAL1_BAUDRATE   115200 // 31250
 #endif
 
-/* use define to dump midi data */
-//#define MIDI_DUMP_Serial1_TO_SERIAL
 
 /*
  * structure is used to build the mapping table
@@ -191,132 +195,46 @@ inline void Midi_HandleShortMsg(uint8_t *data, uint8_t cable)
 
 void Midi_Setup()
 {
-    pinMode(PIN_SERIAL1_RX, INPUT_PULLUP);
     Serial1.begin(MIDI_SERIAL1_BAUDRATE);
+    if (UsbH.Init()) {
+      Serial1.println("USB host did not start");
+      while (1); //halt
+    }
+
+    while (!Serial);
+    Serial1.println("Serial1 started");
 }
+
 
 inline
-void Midi_CheckSerial1(void)
+void Midi_CheckUSB(void)
 {
-    /*
-     * watchdog to avoid getting stuck by receiving incomplete or wrong data
-     */
-    static uint32_t inMsgWd = 0;
-    static uint8_t inMsg[3];
-    static uint8_t inMsgIndex = 0;
+  static uint8_t inMsg[3];
+  char buf[20];
+  uint8_t bufMidi[64];
+  uint16_t  rcvd;
 
-    //Choose Serial1 or Serial1 as required
-
-    if (Serial1.available())
-    {
-        uint8_t incomingByte = Serial1.read();
-
-#ifdef MIDI_DUMP_Serial1_TO_SERIAL
-        Serial.printf("%02x", incomingByte);
-#endif
-        /* ignore live messages */
-        if ((incomingByte & 0xF0) == 0xF0)
-        {
-            return;
-        }
-
-        if (inMsgIndex == 0)
-        {
-            if ((incomingByte & 0x80) != 0x80)
-            {
-                inMsgIndex = 1;
-            }
-        }
-
-        inMsg[inMsgIndex] = incomingByte;
-        inMsgIndex += 1;
-
-        if ((inMsgIndex >= 3) || (((inMsg[0] == 0xD0) || (inMsg[0] == 0xC0)) && inMsgIndex >= 2))
-        {
-#ifdef MIDI_DUMP_Serial1_TO_SERIAL
-            Serial.printf(">%02x %02x %02x\n", inMsg[0], inMsg[1], inMsg[2]);
-#endif
-            Midi_HandleShortMsg(inMsg, 0);
-            inMsgIndex = 0;
-        }
-
-        /*
-         * reset watchdog to allow new bytes to be received
-         */
-        inMsgWd = 0;
+  if (Midi.RecvData(&rcvd,  bufMidi) == 0 ) {
+    uint32_t time = (uint32_t)millis();
+    sprintf(buf, "%04X%04X: ", (uint16_t)(time >> 16), (uint16_t)(time & 0xFFFF)); // Split variable to prevent warnings on the ESP8266 platform
+    Serial1.print(buf);
+    Serial1.print(rcvd);
+    Serial1.print(':');
+    for (int i = 0; i < 64; i++) {
+      sprintf(buf, " %02X", bufMidi[i]);
+      Serial1.print(buf);
     }
-    else
-    {
-        if (inMsgIndex > 0)
-        {
-            inMsgWd++;
-            if (inMsgWd == 0xFFF)
-            {
-                inMsgIndex = 0;
-            }
-        }
-    }
+  }
+
+  if(bufMidi[1] == 0x80 || bufMidi[1] == 0x90 || bufMidi[1] == 0xb0 || bufMidi[1] == 0xe0){
+    inMsg[0] = bufMidi[1]; // Status: Note On, Note Off…
+    inMsg[1] = bufMidi[2]; // Data 1: Note Number, Program Number…
+    inMsg[2] = bufMidi[3]; // Data 2: Velocity, Pressure…
+    Midi_HandleShortMsg(inMsg, 0);
+  }
+
 }
 
-inline
-void Midi_CheckSerial(void)
-{
-    /*
-     * watchdog to avoid getting stuck by receiving incomplete or wrong data
-     */
-    static uint32_t inMsgWd = 0;
-    static uint8_t inMsg[3];
-    static uint8_t inMsgIndex = 0;
-
-    if (Serial.available())
-    {
-        uint8_t incomingByte = Serial.read();
-
-        /* ignore live messages */
-        if ((incomingByte & 0xF0) == 0xF0)
-        {
-            return;
-        }
-
-        if (inMsgIndex == 0)
-        {
-            if ((incomingByte & 0x80) != 0x80)
-            {
-                inMsgIndex = 1;
-            }
-        }
-
-        inMsg[inMsgIndex] = incomingByte;
-        inMsgIndex += 1;
-
-        if ((inMsgIndex >= 3) || (((inMsg[0] == 0xD0) || (inMsg[0] == 0xC0)) && inMsgIndex >= 2))
-        {
-            Midi_HandleShortMsg(inMsg, 1);
-            inMsgIndex = 0;
-
-            if (midiMapping.rawMsg != NULL)
-            {
-                midiMapping.rawMsg(inMsg);
-            }
-        }
-
-        /*
-         * reset watchdog to allow new bytes to be received
-         */
-        inMsgWd = 0;
-    }
-    else
-    {
-        if (inMsgIndex > 0)
-        {
-            inMsgWd++;
-            if (inMsgWd == 0xFFF)
-            {
-                inMsgIndex = 0;
-            }
-        }
-    }
-}
 
 /*
  * this function should be called continuously to ensure that incoming messages can be processed
@@ -324,17 +242,7 @@ void Midi_CheckSerial(void)
 inline
 void Midi_Process()
 {
-    Midi_CheckSerial1();
-#ifdef MIDI_RECV_FROM_SERIAL
-    Midi_CheckSerial();
-#endif
-#ifdef MIDI_USB_HOST_ENABLED
-    Midi_CheckHostData();
-#endif
-
-#ifdef MIDI_USB_HOST_ENABLED
-    MidiHost_loop();
-#elif defined MIDI_USB_DEVICE_ENABLED
-    MidiDev_loop();
-#endif
+    if ( Midi ) {
+      Midi_CheckUSB();
+    }
 }

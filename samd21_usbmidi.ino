@@ -1,43 +1,10 @@
-/*
- * Copyright (c) 2021 Marcel Licence
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * Dieses Programm ist Freie Software: Sie können es unter den Bedingungen
- * der GNU General Public License, wie von der Free Software Foundation,
- * Version 3 der Lizenz oder (nach Ihrer Wahl) jeder neueren
- * veröffentlichten Version, weiter verteilen und/oder modifizieren.
- *
- * Dieses Programm wird in der Hoffnung bereitgestellt, dass es nützlich sein wird, jedoch
- * OHNE JEDE GEWÄHR,; sogar ohne die implizite
- * Gewähr der MARKTFÄHIGKEIT oder EIGNUNG FÜR EINEN BESTIMMTEN ZWECK.
- * Siehe die GNU General Public License für weitere Einzelheiten.
- *
- * Sie sollten eine Kopie der GNU General Public License zusammen mit diesem
- * Programm erhalten haben. Wenn nicht, siehe <https://www.gnu.org/licenses/>.
- */
-
-
 /**
- * @file samd21_mini_synth.ino
- * @author Marcel Licence
- * @date 26.10.2021
+ * @file samd21_usbmidi.ino
+ * @author Turi Scandurra
+ * @date 18.12.2022
  *
- * @brief This file contains the implementation to use an USB keyboard to control the synthesizer
+ * @brief This file contains the implementation to use a Midi USB keyboard to control the synthesizer
  *
- * @see https://youtu.be/jpAP7pvv1PA
- * @see https://youtu.be/uwIEd5NU29I
  */
 
 
@@ -46,7 +13,7 @@
 #endif
 
 
-#ifdef KEYB_USB_HOST_ENABLED
+#ifdef MIDI_USB_HOST_ENABLED
 
 #include <KeyboardController.h>
 
@@ -54,16 +21,10 @@
 #define SerialDebug Serial1
 
 
-USBHost UsbH;
 KeyboardController keyboard(UsbH);
 
-
-
-
-void KeybHost_setup()
+void USBHost_setup()
 {
-    //bFirst = true;
-    //vid = pid = 0;
 
     if (UsbH.Init())
     {
@@ -73,13 +34,13 @@ void KeybHost_setup()
     SerialDebug.println("USB Host started");
 
     delay(200);
-
-
+    
 }
 
 uint32_t lastUSBstate = 0;
 
-void KeybHost_loop()
+
+void USBHost_loop()
 {
     UsbH.Task();
 
@@ -256,17 +217,6 @@ void keyReleased()
     }
 }
 
-#if 0 /* just for testing without synthesizer */
-void Midi_NoteOn(uint8_t ch, uint8_t note, uint8_t vel)
-{
-    SerialDebug.printf("on: %d\n", note);
-}
-
-void Midi_NoteOff(uint8_t ch, uint8_t note)
-{
-    SerialDebug.printf("off: %d\n", note);
-}
-#endif
 
 void printKey()
 {
@@ -274,49 +224,6 @@ void printKey()
     SerialDebug.print(" key:");
     SerialDebug.print(keyboard.getOemKey());
 
-    // getModifiers() returns a bits field with the modifiers-keys
-    int mod = keyboard.getModifiers();
-    SerialDebug.print(" mod:");
-    SerialDebug.print(mod);
-
-    SerialDebug.print(" => ");
-
-    if (mod & LeftCtrl)
-    {
-        SerialDebug.print("L-Ctrl ");
-    }
-    if (mod & LeftShift)
-    {
-        SerialDebug.print("L-Shift ");
-    }
-    if (mod & Alt)
-    {
-        SerialDebug.print("Alt ");
-    }
-    if (mod & LeftCmd)
-    {
-        SerialDebug.print("L-Cmd ");
-    }
-    if (mod & RightCtrl)
-    {
-        SerialDebug.print("R-Ctrl ");
-    }
-    if (mod & RightShift)
-    {
-        SerialDebug.print("R-Shift ");
-    }
-    if (mod & AltGr)
-    {
-        SerialDebug.print("AltGr ");
-    }
-    if (mod & RightCmd)
-    {
-        SerialDebug.print("R-Cmd ");
-    }
-
-    // getKey() returns the ASCII translation of OEM key
-    // combined with modifiers.
-    SerialDebug.write(keyboard.getKey());
     SerialDebug.println();
 }
 
